@@ -233,6 +233,24 @@
   color: #ff9556;
 }
 
+.logo-variant-toggle {
+  align-self: flex-end;
+  border: 1px solid rgba(255, 149, 86, 0.45);
+  border-radius: 0.5rem;
+  background: rgba(255, 106, 26, 0.12);
+  color: #ff9556;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 700;
+  padding: 0.7rem 0.9rem;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.logo-variant-toggle:hover {
+  background: #e85d04;
+  color: #fff;
+}
+
 @media (max-width: 768px) {
   .card-nav-container {
     top: 0.75rem;
@@ -281,6 +299,11 @@
   .card-nav-content {
     flex-direction: column;
     gap: 0.5rem;
+  }
+
+  .logo-variant-toggle {
+    align-self: stretch;
+    margin-top: 0.25rem;
   }
 
   .nav-card {

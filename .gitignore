@@ -46,3 +46,6 @@ next-env.d.ts
 
 # logs locais
 *.log
+
+# Materiais recebidos aguardando curadoria; não publicar nem versionar automaticamente.
+/private/recebidos/

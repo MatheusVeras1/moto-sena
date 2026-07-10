@@ -21,9 +21,16 @@ export const orderCreateSchema = z.object({
   motoName: z.string().min(1).max(120),
   payment: z.string().min(1).max(40),
   delivery: z.string().min(1).max(60),
-  name: z.string().max(120).default(""),
-  phone: z.string().max(40).default(""),
-  city: z.string().max(80).default(""),
+  name: z.string().trim().min(2).max(120),
+  phone: z
+    .string()
+    .trim()
+    .max(40)
+    .transform((value) => value.replace(/\D/g, ""))
+    .refine((value) => value.length >= 10 && value.length <= 15, {
+      message: "WhatsApp inválido.",
+    }),
+  city: z.string().trim().min(2).max(80),
   // Honeypot: campo invisível no formulário; humano nunca preenche.
   empresa: z.string().max(200).optional(),
 });

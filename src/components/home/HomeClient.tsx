@@ -1,9 +1,10 @@
 "use client";
 
 import { motion } from "motion/react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import CardNav from "@/components/CardNav/CardNav";
 import Checkout from "@/components/sections/Checkout";
+import CampaignReel from "@/components/sections/CampaignReel";
 import EconomyCalculator from "@/components/sections/EconomyCalculator";
 import Footer from "@/components/sections/Footer";
 import Hero from "@/components/sections/Hero";
@@ -55,10 +56,27 @@ const navItems = [
   },
 ];
 
+const PRESENTATION_LOGO_KEY = "moto-sena-presentation-logo";
+const PRESENTATION_LOGO_EVENT = "moto-sena-presentation-logo-change";
+
+function subscribeToPresentationLogo(callback: () => void) {
+  window.addEventListener(PRESENTATION_LOGO_EVENT, callback);
+  return () => window.removeEventListener(PRESENTATION_LOGO_EVENT, callback);
+}
+
+function presentationLogoSnapshot() {
+  return sessionStorage.getItem(PRESENTATION_LOGO_KEY) === "true";
+}
+
 export default function HomeClient({ initialState }: { initialState: SiteState }) {
   const [siteState, setSiteState] = useState(initialState);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [checkoutId, setCheckoutId] = useState<string | null>(null);
+  const showingPresentationLogo = useSyncExternalStore(
+    subscribeToPresentationLogo,
+    presentationLogoSnapshot,
+    () => false
+  );
 
   useEffect(() => {
     trackSiteEvent("page_view");
@@ -99,19 +117,28 @@ export default function HomeClient({ initialState }: { initialState: SiteState }
     setCheckoutId(moto ? moto.id : null);
   }
 
+  function togglePresentationLogo() {
+    sessionStorage.setItem(PRESENTATION_LOGO_KEY, String(!showingPresentationLogo));
+    window.dispatchEvent(new Event(PRESENTATION_LOGO_EVENT));
+  }
+
+  const activeLogoPath = showingPresentationLogo ? loja.presentationLogoPath : loja.logoPath;
+
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#111111] text-[#f5f2ea]">
       <CardNav
-        logo={loja.logoPath}
+        logo={activeLogoPath}
         items={navItems}
         ctaHref={whatsappInterestHref}
         ctaLabel="WhatsApp"
+        showingPresentationLogo={showingPresentationLogo}
+        onTogglePresentationLogo={togglePresentationLogo}
       />
       <Hero
-        featuredMotoId={siteState.settings.featuredMotoId}
-        motos={activeMotos}
+        logoPath={activeLogoPath}
         onCheckout={() => setCheckoutMoto(selectedMoto ?? null)}
       />
+      <CampaignReel />
 
       {siteState.settings.banner ? (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#ff6a1a]/30 bg-[#1c1409]/95 px-4 py-3 text-center text-sm font-medium text-[#ff9556] backdrop-blur-sm">
@@ -161,10 +188,15 @@ export default function HomeClient({ initialState }: { initialState: SiteState }
       <EconomyCalculator />
       <HowToBuy />
       <Stores />
-      <Footer />
+      <Footer logoPath={activeLogoPath} />
 
       {checkoutMoto ? (
-        <Checkout moto={checkoutMoto} onClose={() => setCheckoutMoto(null)} />
+        <Checkout
+          moto={checkoutMoto}
+          motos={activeMotos}
+          onChangeMoto={setCheckoutId}
+          onClose={() => setCheckoutMoto(null)}
+        />
       ) : null}
     </main>
   );

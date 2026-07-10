@@ -13,6 +13,7 @@ const VIDEO_ROOT = path.join(
 );
 
 const allowedVideos = {
+  campanhas: new Set(["vitrine", "atendimento", "modelos", "tecnologia", "entrega"]),
   hero: new Set(["hero-urban-stickman"]),
   "hero-modelos": new Set([
     "bob-max-1000w",

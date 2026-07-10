@@ -2,6 +2,7 @@ export type StoreUnit = {
   id: string;
   name: string;
   address: string;
+  locationDetail: string;
   mapsUrl: string;
   mapsEmbedUrl: string;
 };
@@ -15,6 +16,7 @@ export const stores: StoreUnit[] = [
     id: "shopping-nova-iguacu",
     name: "Moto Sena - Shopping Nova Iguaçu",
     address: "Av. Abílio Augusto Távora, 1111 - Luz, Nova Iguaçu - RJ, 26260-045",
+    locationDetail: "Dentro do Shopping Nova Iguaçu, no 1º piso.",
     mapsUrl:
       "https://www.google.com/maps/search/?api=1&query=Moto%20Sena%20Shopping%20Nova%20Igua%C3%A7u%20Av.%20Ab%C3%ADlio%20Augusto%20T%C3%A1vora%201111",
     mapsEmbedUrl: mapsEmbed(

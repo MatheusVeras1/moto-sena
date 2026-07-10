@@ -16,7 +16,7 @@ export default function ProductDetail({
   return (
     <section id="detalhe" className="scroll-mt-24 border-y border-white/10 bg-[#151515]">
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-16 sm:px-6 lg:grid-cols-[1.2fr_0.8fr] lg:px-8">
-        <motion.div {...fadeUp} className="overflow-hidden rounded-lg border border-white/10 bg-black">
+        <motion.div {...fadeUp} className="self-start overflow-hidden rounded-lg border border-white/10 bg-black">
           <Viewer360 src={moto.video} poster={moto.poster} motoId={moto.id} />
         </motion.div>
         <motion.div {...fadeUp} className="flex flex-col justify-center">

@@ -26,7 +26,7 @@ export default function MotoCard({
       viewport={{ once: true, margin: "-80px" }}
       transition={{ duration: 0.42, delay: Math.min(index * 0.04, 0.24) }}
       className={cn(
-        "relative overflow-hidden rounded-lg border bg-[#1b1b1b] transition",
+        "relative flex h-full flex-col overflow-hidden rounded-lg border bg-[#1b1b1b] transition",
         active ? "border-[#ff6a1a]/65 shadow-xl shadow-black/20" : "border-white/10"
       )}
     >
@@ -35,13 +35,13 @@ export default function MotoCard({
           Promoção
         </span>
       ) : null}
-      <button type="button" onClick={onDetails} className="group block w-full text-left">
+      <button type="button" onClick={onDetails} className="group flex w-full flex-1 flex-col text-left">
         <LazyVideo
           className="aspect-video w-full object-cover transition duration-500 group-hover:scale-[1.02]"
           src={moto.video}
           poster={moto.poster}
         />
-        <div className="p-4">
+        <div className="flex flex-1 flex-col p-4">
           <div className="flex items-start justify-between gap-3">
             <div>
               <h3 className="text-lg font-semibold text-white">{moto.name}</h3>
@@ -66,7 +66,7 @@ export default function MotoCard({
           </div>
         </div>
       </button>
-      <div className="flex gap-2 px-4 pb-4">
+      <div className="mt-auto flex gap-2 px-4 pb-4">
         <button
           type="button"
           onClick={onDetails}

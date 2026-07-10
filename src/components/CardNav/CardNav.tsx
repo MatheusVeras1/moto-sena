@@ -28,6 +28,8 @@ type CardNavProps = {
   ctaHref: string;
   ctaLabel?: string;
   ease?: string;
+  showingPresentationLogo?: boolean;
+  onTogglePresentationLogo?: () => void;
 };
 
 export default function CardNav({
@@ -37,6 +39,8 @@ export default function CardNav({
   ctaHref,
   ctaLabel = "WhatsApp",
   ease = "power3.out",
+  showingPresentationLogo = false,
+  onTogglePresentationLogo,
 }: CardNavProps) {
   const [isHamburgerOpen, setIsHamburgerOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -234,6 +238,16 @@ export default function CardNav({
               </div>
             </div>
           ))}
+          {onTogglePresentationLogo ? (
+            <button
+              type="button"
+              className="logo-variant-toggle"
+              onClick={onTogglePresentationLogo}
+              aria-pressed={showingPresentationLogo}
+            >
+              {showingPresentationLogo ? "Usar logo padrão" : "Alternar logo de apresentação"}
+            </button>
+          ) : null}
         </div>
       </nav>
     </div>

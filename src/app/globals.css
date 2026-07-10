@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+:root {
+  --background: #111111;
+  --foreground: #f5f2ea;
+  --metal-red: #e85d04;
+  --bright-red: #ff6a1a;
+  --premium-gold: #ff6a1a;
+  --soft-gold: #ff9556;
+  --panel: #1b1b1b;
+  --panel-soft: #242424;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  /* Remove o flash cinza ao tocar em botões/links no Android/iOS. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Respeita quem pediu menos movimento nas preferências do sistema. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+video {
+  background: #0c0c0c;
+}
+
+::selection {
+  background: rgba(227, 27, 35, 0.35);
+  color: #ffffff;
+}
+
+.text-balance {
+  text-wrap: balance;
+}

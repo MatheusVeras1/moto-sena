@@ -7,6 +7,7 @@
 - Logo de apresentação: variação metálica em `public/brand/logo-moto-sena-apresentacao.png`, alternável pelo menu e persistida só na sessão do navegador.
 - Metadados e preview social usam exclusivamente a logo padrão.
 - Catálogo de modelos permanece como está até a confirmação oficial dos produtos.
+- A seção "Como comprar" usa uma timeline interativa (01 a 04) centralizada, que avança dinamicamente a cada 3 segundos em ciclo ininterrupto, reiniciando o temporizador adequadamente após seleções manuais.
 
 ## Campanhas em vídeo
 
@@ -33,6 +34,7 @@
 
 - Cards da vitrine agora usam layout flexível de altura total, mantendo os botões de ação alinhados na base de cada linha do grid. Lint, build e comportamento de detalhes/interesse foram validados em desktop e em duas colunas.
 - O visor 360° do modelo selecionado não estica mais junto com a coluna de conteúdo; isso remove a faixa preta abaixo de X13, YEP e V9 Max. Lint e build aprovados; no X13, o painel e o vídeo diferem apenas pela borda de 2 px.
+- Nova seção "Como comprar" validada com sucesso: comportamento responsivo (linha vertical em mobile, horizontal em desktop), progresso contínuo e automático a cada 3 segundos, reinício suave após clique manual, e linter/build aprovados sem falhas.
 
 ## Pendências
 

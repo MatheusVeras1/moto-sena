@@ -9,7 +9,10 @@ import {
   CalendarDays,
   ChartNoAxesCombined,
   Clock,
+  Download,
   Eye,
+  FileSpreadsheet,
+  FileText,
   Filter,
   Lightbulb,
   MapPin,
@@ -245,6 +248,7 @@ export default function OverviewDashboard({
   error = "",
   onSelectRange,
   onSelectMonth,
+  onExport,
 }: {
   overview: AdminOverview;
   demo?: boolean;
@@ -252,7 +256,24 @@ export default function OverviewDashboard({
   error?: string;
   onSelectRange: (range: RangeValue) => void;
   onSelectMonth: (month: string) => void;
+  onExport: (format: "pdf" | "xlsx") => Promise<void>;
 }) {
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exporting, setExporting] = useState<"pdf" | "xlsx" | null>(null);
+  const [exportError, setExportError] = useState("");
+
+  async function runExport(format: "pdf" | "xlsx") {
+    setExporting(format);
+    setExportError("");
+    setExportOpen(false);
+    try {
+      await onExport(format);
+    } catch (caught) {
+      setExportError(caught instanceof Error ? caught.message : "Não foi possível gerar o relatório.");
+    } finally {
+      setExporting(null);
+    }
+  }
   const maxFunnel = Math.max(overview.funil[0]?.sessoes ?? overview.funil[0]?.valor ?? 0, 1);
   const maxCity = Math.max(...overview.cidades.map((city) => city.visitas), 1);
   const maxOrigin = Math.max(...overview.origens.map((origin) => origin.visitas), 1);
@@ -285,8 +306,8 @@ export default function OverviewDashboard({
 
   return (
     <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4">
-      {error ? (
-        <p className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-[#f87171]">{error}</p>
+      {error || exportError ? (
+        <p className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-[#f87171]">{error || exportError}</p>
       ) : null}
 
       <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
@@ -326,6 +347,25 @@ export default function OverviewDashboard({
               ))}
             </select>
           </label>
+          <div className="relative">
+            <button
+              type="button"
+              disabled={exporting !== null}
+              onClick={() => setExportOpen((value) => !value)}
+              className="inline-flex h-10 items-center gap-2 rounded-md bg-gestor-gold px-3 text-sm font-semibold text-[#111] transition hover:bg-gestor-gold-soft disabled:opacity-60"
+              aria-expanded={exportOpen}
+              aria-haspopup="menu"
+            >
+              <Download className="h-4 w-4" />
+              {exporting ? "Gerando..." : "Exportar"}
+            </button>
+            {exportOpen ? (
+              <div role="menu" className="absolute right-0 z-30 mt-2 min-w-48 overflow-hidden rounded-md border border-white/10 bg-[#1b1b1b] p-1 shadow-2xl shadow-black/50">
+                <button type="button" role="menuitem" onClick={() => runExport("pdf")} className="flex min-h-10 w-full items-center gap-2 rounded px-3 text-left text-sm text-zinc-200 hover:bg-white/10"><FileText className="h-4 w-4 text-gestor-gold" />Baixar PDF</button>
+                <button type="button" role="menuitem" onClick={() => runExport("xlsx")} className="flex min-h-10 w-full items-center gap-2 rounded px-3 text-left text-sm text-zinc-200 hover:bg-white/10"><FileSpreadsheet className="h-4 w-4 text-emerald-400" />Baixar Excel</button>
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
 

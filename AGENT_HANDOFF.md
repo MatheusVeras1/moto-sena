@@ -49,6 +49,9 @@
 - Rotação tripla de logos e persistência de sessão ativas e integradas ao header e rodapé.
 - Ícones animados do menu funcionando sem emojis no linter e compilados com sucesso.
 - Estrutura de Lojas dinâmica sincronizada: todos os metadados das unidades (Shopping Nova Iguaçu e Shopping Grande Rio), incluindo descriptions, shortNames e openingHours, são agora carregados dinamicamente de `src/data/stores.ts` em vez de serem fixos no componente UI.
+- Painel do Gestor agora conta com controle de estoque integrado (Entradas, Saídas e Ajustes de saldo com histórico de movimentações) no Supabase (migração `005_inventory_and_reports.sql`) e simulações completas no modo Demo.
+- Geração de relatórios gerenciais em PDF (jsPDF) e Excel (exceljs) com a paleta dourada do Gestor, dados consolidados do período filtrado e sem expor informações pessoais de clientes.
+- Tratamento de erros de falta de saldo (409 Conflict) ao alterar status de pedidos para "Vendido" no real e demo.
 
 ## Pendências
 

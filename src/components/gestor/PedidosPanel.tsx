@@ -54,7 +54,10 @@ export default function PedidosPanel() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, status }),
       });
-      if (!response.ok) throw new Error("Não foi possível atualizar o pedido.");
+      if (!response.ok) {
+        const body = (await response.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error ?? "Não foi possível atualizar o pedido.");
+      }
       const data = (await response.json()) as { orders: OrderDto[] };
       setPedidos(data.orders);
     } catch (err) {

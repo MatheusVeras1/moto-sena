@@ -105,3 +105,57 @@ export type OrderStatusUpdate = {
   id: string;
   status: PedidoStatus;
 };
+
+export type AdminCatalogMoto = CatalogMoto & {
+  stockQuantity: number;
+};
+
+export type StockMovementType =
+  | "entrada"
+  | "saida"
+  | "ajuste"
+  | "venda"
+  | "estorno_venda";
+
+export type StockMovement = {
+  id: string;
+  motoId: string;
+  motoName: string;
+  type: StockMovementType;
+  delta: number;
+  previousQuantity: number;
+  newQuantity: number;
+  note: string;
+  orderId: string | null;
+  actorEmail: string;
+  createdAt: string;
+};
+
+export type StockMovementInput = {
+  motoId: string;
+  type: "entrada" | "saida" | "ajuste";
+  quantity: number;
+  note?: string;
+};
+
+export type AdminSiteState = Omit<SiteState, "motos"> & {
+  motos: AdminCatalogMoto[];
+};
+
+export type ManagementReportOrder = {
+  createdAt: string;
+  motoName: string;
+  payment: string;
+  delivery: string;
+  city: string;
+  status: PedidoStatus;
+};
+
+export type ManagementReportData = {
+  store: { name: string; logoPath: string };
+  generatedAt: string;
+  overview: AdminOverview;
+  inventory: AdminCatalogMoto[];
+  movements: StockMovement[];
+  orders: ManagementReportOrder[];
+};

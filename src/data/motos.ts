@@ -14,6 +14,8 @@ export type Moto = {
   specs: string[];
   highlights: string[];
   caution?: string;
+  /** Permite manter o modelo no Gestor sem publicá-lo na vitrine inicial. */
+  defaultActive?: boolean;
 };
 
 export const motos: Moto[] = [

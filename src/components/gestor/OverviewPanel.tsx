@@ -2,7 +2,8 @@
 
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import type { AdminOverview } from "@/lib/site/types";
+import type { AdminOverview, ManagementReportData } from "@/lib/site/types";
+import { exportManagementReport } from "@/lib/site/report-export";
 import OverviewDashboard, { emptyOverview } from "./OverviewDashboard";
 
 type RangeValue = 7 | 30 | 90;
@@ -51,6 +52,15 @@ export default function OverviewPanel() {
     );
   }
 
+  async function exportReport(format: "pdf" | "xlsx") {
+    const query = overview.periodo.month
+      ? `?month=${overview.periodo.month}`
+      : `?range=${overview.periodo.range ?? 30}`;
+    const response = await fetch(`/api/admin/reports/data${query}`, { cache: "no-store" });
+    if (!response.ok) throw new Error("Não foi possível preparar os dados do relatório.");
+    await exportManagementReport((await response.json()) as ManagementReportData, format);
+  }
+
   return (
     <OverviewDashboard
       overview={overview}
@@ -68,6 +78,7 @@ export default function OverviewPanel() {
         setRefreshing(true);
         setError("");
       }}
+      onExport={exportReport}
     />
   );
 }

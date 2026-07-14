@@ -1,4 +1,9 @@
-import { getOrders, requireAdminUser, updateOrderStatus } from "@/lib/site/db";
+import {
+  getOrders,
+  requireAdminUser,
+  StockConflictError,
+  updateOrderStatus,
+} from "@/lib/site/db";
 import { orderStatusSchema } from "@/lib/site/validation";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +25,14 @@ export async function PATCH(request: Request) {
     return Response.json({ error: "Dados inválidos." }, { status: 400 });
   }
 
-  await updateOrderStatus(parsed.data.id, parsed.data.status);
-  const orders = await getOrders();
-  return Response.json({ orders });
+  try {
+    await updateOrderStatus(parsed.data.id, parsed.data.status);
+    const orders = await getOrders();
+    return Response.json({ orders });
+  } catch (error) {
+    if (error instanceof StockConflictError) {
+      return Response.json({ error: error.message }, { status: 409 });
+    }
+    throw error;
+  }
 }

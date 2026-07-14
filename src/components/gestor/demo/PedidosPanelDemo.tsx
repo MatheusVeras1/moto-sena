@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Card, StatTile } from "../ui";
 import { updatePedidoStatus, usePedidos, type PedidoStatus } from "./demo-store";
@@ -29,6 +30,16 @@ const STATUS_EDGE: Record<PedidoStatus, string> = {
 /** Pedidos da conta de apresentação: exemplos simulados, edição só na sessão. */
 export default function PedidosPanelDemo() {
   const pedidos = usePedidos();
+  const [error, setError] = useState("");
+
+  function changeStatus(id: string, status: PedidoStatus) {
+    setError("");
+    try {
+      updatePedidoStatus(id, status);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Falha ao atualizar pedido.");
+    }
+  }
 
   const contagem = (status: PedidoStatus) =>
     pedidos.filter((p) => p.status === status).length;
@@ -41,6 +52,8 @@ export default function PedidosPanelDemo() {
         <StatTile label="Vendidos" value={String(contagem("vendido"))} />
         <StatTile label="Perdidos" value={String(contagem("perdido"))} />
       </div>
+
+      {error ? <p className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300" role="alert">{error}</p> : null}
 
       <Card
         title="Pedidos recebidos"
@@ -89,7 +102,7 @@ export default function PedidosPanelDemo() {
                 <select
                   value={pedido.status}
                   onChange={(event) =>
-                    updatePedidoStatus(pedido.id, event.target.value as PedidoStatus)
+                    changeStatus(pedido.id, event.target.value as PedidoStatus)
                   }
                   className={cn(
                     "h-10 rounded-md border bg-black/40 px-3 text-base font-semibold outline-none sm:text-sm transition focus:border-gestor-gold",

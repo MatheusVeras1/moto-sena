@@ -7,12 +7,38 @@ import {
   createSupabasePublicClient,
   createSupabaseServerClient,
 } from "@/lib/supabase/server";
-import type { AdminOverview, CatalogMoto, OrderDto, SiteState } from "./types";
+import type {
+  AdminOverview,
+  AdminSiteState,
+  CatalogMoto,
+  OrderDto,
+  SiteState,
+  StockMovement,
+  StockMovementInput,
+  StockMovementType,
+  ManagementReportOrder,
+} from "./types";
 import {
   aggregateOverviewAnalytics,
   type OverviewEvent,
   type OverviewOrder,
 } from "./overview-analytics";
+
+type StockMovementRow = {
+  id: string;
+  moto_id: string;
+  movement_type: StockMovementType;
+  delta: number;
+  previous_quantity: number;
+  new_quantity: number;
+  note: string | null;
+  order_id: string | null;
+  actor_email: string | null;
+  created_at: string;
+  motos: { name: string } | Array<{ name: string }> | null;
+};
+
+export class StockConflictError extends Error {}
 
 type MotoRow = {
   id: string;
@@ -140,11 +166,14 @@ export async function getPublicSiteState(): Promise<SiteState> {
   };
 }
 
-export async function getAdminSiteState(): Promise<SiteState> {
+export async function getAdminSiteState(): Promise<AdminSiteState> {
   const supabase = createSupabaseAdminClient();
-  if (!supabase) return fallbackSiteState();
+  if (!supabase) {
+    const fallback = fallbackSiteState();
+    return { ...fallback, motos: fallback.motos.map((moto) => ({ ...moto, stockQuantity: 0 })) };
+  }
 
-  const [motosResult, settingsResult] = await Promise.all([
+  const [motosResult, settingsResult, inventoryResult] = await Promise.all([
     supabase
       .from("motos")
       .select(
@@ -156,13 +185,23 @@ export async function getAdminSiteState(): Promise<SiteState> {
       .select("banner,featured_moto_id")
       .eq("id", "main")
       .maybeSingle(),
+    supabase.from("inventory").select("moto_id,quantity"),
   ]);
 
-  if (motosResult.error || !motosResult.data?.length) return fallbackSiteState();
+  if (motosResult.error || !motosResult.data?.length) {
+    const fallback = fallbackSiteState();
+    return { ...fallback, motos: fallback.motos.map((moto) => ({ ...moto, stockQuantity: 0 })) };
+  }
 
   const settingsRow = settingsResult.data as SettingsRow | null;
+  const quantities = new Map(
+    (inventoryResult.data ?? []).map((item) => [item.moto_id, item.quantity])
+  );
   return {
-    motos: (motosResult.data as MotoRow[]).map(toMoto),
+    motos: (motosResult.data as MotoRow[]).map((row) => ({
+      ...toMoto(row),
+      stockQuantity: quantities.get(row.id) ?? 0,
+    })),
     settings: {
       banner: settingsRow?.banner ?? "",
       featuredMotoId: settingsRow?.featured_moto_id ?? "x13-1000w",
@@ -302,11 +341,78 @@ export async function getOrders() {
 }
 
 export async function updateOrderStatus(id: string, status: OrderDto["status"]) {
-  const supabase = createSupabaseAdminClient();
-  if (!supabase) throw new Error("Supabase nÃ£o configurado.");
+  const supabase = await createSupabaseServerClient();
+  if (!supabase) throw new Error("Supabase não configurado.");
 
-  const { error } = await supabase.from("orders").update({ status }).eq("id", id);
+  const { error } = await supabase.rpc("update_order_status_with_stock", {
+    p_order_id: id,
+    p_status: status,
+  });
+  if (error?.message.includes("INSUFFICIENT_STOCK")) {
+    throw new StockConflictError(
+      "Esta moto está sem estoque. Registre uma entrada ou ajuste o saldo antes de concluir a venda."
+    );
+  }
   if (error) throw error;
+}
+
+export async function applyStockMovement(input: StockMovementInput) {
+  const supabase = await createSupabaseServerClient();
+  if (!supabase) throw new Error("Supabase não configurado.");
+
+  const { data, error } = await supabase.rpc("apply_stock_movement", {
+    p_moto_id: input.motoId,
+    p_type: input.type,
+    p_quantity: input.quantity,
+    p_note: input.note ?? "",
+  });
+  if (error?.message.includes("INSUFFICIENT_STOCK")) {
+    throw new StockConflictError("A saída é maior que o estoque disponível.");
+  }
+  if (error) throw error;
+  return Number(data);
+}
+
+function toStockMovement(row: StockMovementRow): StockMovement {
+  const relation = Array.isArray(row.motos) ? row.motos[0] : row.motos;
+  return {
+    id: row.id,
+    motoId: row.moto_id,
+    motoName: relation?.name ?? row.moto_id,
+    type: row.movement_type,
+    delta: row.delta,
+    previousQuantity: row.previous_quantity,
+    newQuantity: row.new_quantity,
+    note: row.note ?? "",
+    orderId: row.order_id,
+    actorEmail: row.actor_email ?? "Administrador",
+    createdAt: row.created_at,
+  };
+}
+
+export async function getStockMovements(options: {
+  motoId?: string;
+  start?: Date;
+  end?: Date;
+  limit?: number;
+} = {}) {
+  const supabase = createSupabaseAdminClient();
+  if (!supabase) return [];
+
+  let query = supabase
+    .from("stock_movements")
+    .select(
+      "id,moto_id,movement_type,delta,previous_quantity,new_quantity,note,order_id,actor_email,created_at,motos(name)"
+    )
+    .order("created_at", { ascending: false })
+    .limit(Math.min(Math.max(options.limit ?? 20, 1), 5000));
+  if (options.motoId) query = query.eq("moto_id", options.motoId);
+  if (options.start) query = query.gte("created_at", options.start.toISOString());
+  if (options.end) query = query.lt("created_at", options.end.toISOString());
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data as unknown as StockMovementRow[]).map(toStockMovement);
 }
 
 export async function trackEvent(input: {
@@ -371,6 +477,47 @@ function listAvailableMonths(firstEventIso: string | null) {
     if (months.length >= 24) break;
   }
   return months;
+}
+
+export function resolveReportPeriod(options: {
+  month?: string | null;
+  range?: 7 | 30 | 90;
+}) {
+  if (options.month) {
+    const { year, monthIndex } = parseMonth(options.month);
+    return {
+      start: monthStartUtc(year, monthIndex),
+      end: monthStartUtc(year, monthIndex + 1),
+    };
+  }
+  const range = options.range ?? 30;
+  const end = new Date();
+  return { start: new Date(end.getTime() - range * 86400000), end };
+}
+
+export async function getReportOrders(start: Date, end: Date) {
+  const supabase = createSupabaseAdminClient();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("orders")
+    .select("moto_name,payment,delivery,buyer_city,status,created_at")
+    .gte("created_at", start.toISOString())
+    .lt("created_at", end.toISOString())
+    .order("created_at", { ascending: false })
+    .limit(5000);
+  if (error) throw error;
+
+  return (data ?? []).map(
+    (row): ManagementReportOrder => ({
+      createdAt: row.created_at,
+      motoName: row.moto_name,
+      payment: row.payment,
+      delivery: row.delivery,
+      city: row.buyer_city ?? "",
+      status: row.status as OrderDto["status"],
+    })
+  );
 }
 
 export async function getOverview(

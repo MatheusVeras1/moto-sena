@@ -63,3 +63,27 @@ export const analyticsEventSchema = z.object({
       message: "Metadata grande demais.",
     }),
 });
+
+export const stockMovementSchema = z
+  .object({
+    motoId: z.string().min(1).max(80),
+    type: z.enum(["entrada", "saida", "ajuste"]),
+    quantity: z.number().int().min(0).max(100000),
+    note: z.string().trim().max(240).optional().default(""),
+  })
+  .superRefine((value, context) => {
+    if (value.type !== "ajuste" && value.quantity < 1) {
+      context.addIssue({
+        code: "custom",
+        path: ["quantity"],
+        message: "A quantidade deve ser maior que zero.",
+      });
+    }
+    if (value.type === "ajuste" && !value.note) {
+      context.addIssue({
+        code: "custom",
+        path: ["note"],
+        message: "Informe o motivo do ajuste.",
+      });
+    }
+  });

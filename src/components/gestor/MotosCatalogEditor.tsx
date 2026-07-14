@@ -4,9 +4,10 @@ import Image from "next/image";
 import { motion } from "motion/react";
 import { CheckCircle2, Eye, EyeOff, Loader2, RotateCcw, Save, Search, Tag } from "lucide-react";
 import { useMemo, useState } from "react";
-import type { CatalogMoto } from "@/lib/site/types";
+import type { AdminCatalogMoto, StockMovement, StockMovementInput } from "@/lib/site/types";
 import { cn } from "@/lib/utils";
 import { Card } from "./ui";
+import StockControls from "./StockControls";
 
 export type MotoCatalogUpdate = {
   id: string;
@@ -15,7 +16,7 @@ export type MotoCatalogUpdate = {
   active: boolean;
 };
 
-type EditableMoto = CatalogMoto & {
+type EditableMoto = AdminCatalogMoto & {
   priceInput: string;
   promoInput: string;
 };
@@ -35,12 +36,16 @@ export default function MotosCatalogEditor({
   loadError = "",
   subtitle,
   onSave,
+  onStockMovement,
+  onLoadStockHistory,
 }: {
-  catalog: CatalogMoto[];
+  catalog: AdminCatalogMoto[];
   loading?: boolean;
   loadError?: string;
   subtitle: string;
-  onSave: (items: MotoCatalogUpdate[]) => Promise<CatalogMoto[]>;
+  onSave: (items: MotoCatalogUpdate[]) => Promise<AdminCatalogMoto[]>;
+  onStockMovement: (input: StockMovementInput) => Promise<{ quantity: number; movements: StockMovement[] }>;
+  onLoadStockHistory: (motoId: string) => Promise<StockMovement[]>;
 }) {
   const [motos, setMotos] = useState<EditableMoto[]>(() => catalog.map(toEditable));
   const [initial, setInitial] = useState<EditableMoto[]>(() => catalog.map(toEditable));
@@ -200,6 +205,13 @@ export default function MotosCatalogEditor({
                   </div>
                 </div>
 
+                <StockControls
+                  motoId={moto.id}
+                  initialQuantity={moto.stockQuantity}
+                  onMove={onStockMovement}
+                  onLoadHistory={onLoadStockHistory}
+                />
+
                 <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 bg-black/20 p-4">
                   <button
                     type="button"
@@ -239,7 +251,7 @@ export default function MotosCatalogEditor({
   );
 }
 
-function toEditable(moto: CatalogMoto): EditableMoto {
+function toEditable(moto: AdminCatalogMoto): EditableMoto {
   return { ...moto, priceInput: moto.numericPrice != null ? String(moto.numericPrice) : "", promoInput: moto.promoPrice != null ? String(moto.promoPrice) : "" };
 }
 

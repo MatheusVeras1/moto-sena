@@ -37,7 +37,7 @@ export default function SitePanelDemo() {
             onChange={(event) => setBanner(event.target.value)}
             rows={3}
             placeholder='Ex: "Condições especiais no Shopping Nova Iguaçu nesta semana"'
-            className="w-full rounded-md border border-white/10 bg-black/35 p-3 text-base text-white outline-none sm:text-sm transition focus:border-[#ff6a1a]"
+            className="w-full rounded-md border border-white/10 bg-black/35 p-3 text-base text-white outline-none sm:text-sm transition focus:border-gestor-gold"
           />
         </Card>
       </motion.div>
@@ -55,7 +55,7 @@ export default function SitePanelDemo() {
           <select
             value={featured}
             onChange={(event) => setFeatured(event.target.value)}
-            className="h-11 w-full rounded-md border border-white/10 bg-black/40 px-3 text-base font-semibold text-white outline-none sm:text-sm transition focus:border-[#ff6a1a]"
+            className="h-11 w-full rounded-md border border-white/10 bg-black/40 px-3 text-base font-semibold text-white outline-none sm:text-sm transition focus:border-gestor-gold"
           >
             {motos.map((moto) => (
               <option key={moto.id} value={moto.id} className="bg-[#151515]">
@@ -71,7 +71,7 @@ export default function SitePanelDemo() {
               "mt-5 inline-flex h-11 items-center justify-center rounded-md px-5 text-sm font-semibold transition",
               saved
                 ? "bg-emerald-600 text-white"
-                : "bg-[#e85d04] text-white hover:bg-[#ff6a1a]"
+                : "bg-gestor-gold text-[#111111] hover:bg-gestor-gold-soft"
             )}
           >
             {saved ? "Alterações no ar ✓" : "Salvar alterações"}

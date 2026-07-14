@@ -11,9 +11,9 @@ import { pedidosDemo } from "@/data/analytics-demo";
 
 export type MotoOverride = {
   /** Preço atual em reais. Ausente = preço original do catálogo. */
-  price?: number;
+  price?: number | null;
   /** Preço promocional em reais. Definido = mostra "de X por Y". */
-  promoPrice?: number;
+  promoPrice?: number | null;
   /** false = moto sai da vitrine (esgotada/indisponível). */
   active?: boolean;
 };
@@ -87,6 +87,11 @@ export function usePedidos(): Pedido[] {
 
 export function saveOverride(motoId: string, override: MotoOverride) {
   state = { ...state, overrides: { ...state.overrides, [motoId]: override } };
+  emit();
+}
+
+export function saveOverrides(overrides: Overrides) {
+  state = { ...state, overrides };
   emit();
 }
 

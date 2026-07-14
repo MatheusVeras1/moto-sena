@@ -59,7 +59,7 @@ export default function LoginForm() {
             alt={loja.nome}
             width={48}
             height={48}
-            className="h-12 w-12 rounded-md border border-[#ff6a1a]/40 object-cover"
+            className="h-12 w-12 rounded-md border border-gestor-gold/40 object-cover"
           />
           <div>
             <p className="font-semibold text-white">{loja.nome}</p>
@@ -78,7 +78,7 @@ export default function LoginForm() {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             autoFocus
-            className="mt-2 h-12 w-full rounded-md border border-white/10 bg-black/35 px-3 text-base text-white outline-none sm:text-sm transition focus:border-[#ff6a1a]"
+            className="mt-2 h-12 w-full rounded-md border border-white/10 bg-black/35 px-3 text-base text-white outline-none sm:text-sm transition focus:border-gestor-gold"
           />
         </label>
 
@@ -91,16 +91,16 @@ export default function LoginForm() {
             autoComplete="current-password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            className="mt-2 h-12 w-full rounded-md border border-white/10 bg-black/35 px-3 text-base text-white outline-none sm:text-sm transition focus:border-[#ff6a1a]"
+            className="mt-2 h-12 w-full rounded-md border border-white/10 bg-black/35 px-3 text-base text-white outline-none sm:text-sm transition focus:border-gestor-gold"
           />
         </label>
 
-        {error ? <p className="mt-3 text-sm text-[#ff6a1a]">{error}</p> : null}
+        {error ? <p className="mt-3 text-sm text-[#f87171]">{error}</p> : null}
 
         <button
           type="submit"
           disabled={loading}
-          className="mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-md bg-[#e85d04] text-sm font-semibold text-white transition hover:bg-[#ff6a1a] disabled:cursor-not-allowed disabled:opacity-60"
+          className="mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-md bg-gestor-gold text-sm font-semibold text-[#111111] transition hover:bg-gestor-gold-soft disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Lock className="h-4 w-4" />
           {loading ? "Entrando..." : "Entrar"}
@@ -108,7 +108,7 @@ export default function LoginForm() {
         {!hasSupabaseConfig ? (
           <a
             href="/gestor/demo"
-            className="mt-3 inline-flex h-11 w-full items-center justify-center rounded-md border border-[#ff6a1a]/40 bg-[#ff6a1a]/10 text-sm font-semibold text-[#ff9556] transition hover:bg-[#ff6a1a]/15"
+            className="mt-3 inline-flex h-11 w-full items-center justify-center rounded-md border border-gestor-gold/40 bg-gestor-gold/10 text-sm font-semibold text-gestor-gold-soft transition hover:bg-gestor-gold/15"
           >
             Ver painel demo
           </a>

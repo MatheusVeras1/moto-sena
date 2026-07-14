@@ -4,6 +4,8 @@
 // reais coletados no site.
 // ---------------------------------------------------------------------------
 
+import type { AdminOverview } from "@/lib/site/types";
+
 export const PERIODO_LABEL = "Últimos 30 dias";
 
 export const kpis = {
@@ -70,6 +72,127 @@ export const calculadora = {
   kmPorDiaMedio: 27,
   economiaMediaEstimada: 447,
 };
+
+function scale(value: number, factor: number) {
+  return Math.max(0, Math.round(value * factor));
+}
+
+export function getOverviewDemo(options: {
+  range?: 7 | 30 | 90;
+  month?: string | null;
+} = {}): AdminOverview {
+  const range = options.range ?? 30;
+  const month = options.month ?? null;
+  const [selectedYear, selectedMonth] = month?.split("-").map(Number) ?? [];
+  const days = month ? new Date(Date.UTC(selectedYear, selectedMonth, 0)).getUTCDate() : range;
+  const factor = days / 30;
+  const serieDiaria = Array.from({ length: days }, (_, index) => {
+    const date = month
+      ? new Date(Date.UTC(selectedYear, selectedMonth - 1, index + 1, 12))
+      : new Date();
+    if (!month) date.setDate(date.getDate() - (days - index - 1));
+    const wave = Math.sin(index * 0.72) * 18;
+    const visitors = Math.max(62, Math.round(134 + wave + (index % 6) * 5));
+    return {
+      data: date.toISOString().slice(0, 10),
+      visitantes: visitors,
+      contatosWhatsApp: Math.max(4, Math.round(visitors * (0.066 + (index % 3) * 0.004))),
+      pedidos: Math.max(1, Math.round(visitors * (0.011 + (index % 4) * 0.002))),
+    };
+  });
+  const visitantesUnicos = serieDiaria.reduce((sum, day) => sum + day.visitantes, 0);
+  const contatosWhatsAppUnicos = serieDiaria.reduce(
+    (sum, day) => sum + day.contatosWhatsApp,
+    0
+  );
+  const pedidosEnviados = serieDiaria.reduce((sum, day) => sum + day.pedidos, 0);
+  const conversaoPedido = Math.round((pedidosEnviados / visitantesUnicos) * 1000) / 10;
+  const modelosDesempenho = motosMaisVistas.map((moto) => {
+    const interessados = scale(moto.vistas * 0.58, factor);
+    const pedidos = scale(moto.pedidos, factor);
+    return {
+      motoId: moto.motoId,
+      nome: moto.nome,
+      interessados,
+      pedidos,
+      conversao: interessados ? Math.round((pedidos / interessados) * 1000) / 10 : 0,
+      tendencia: moto.tendencia,
+    };
+  });
+  const interactions = Math.round(visitantesUnicos * 0.46);
+  const checkout = Math.round(visitantesUnicos * 0.1);
+  const checkoutWhatsapp = Math.min(Math.round(visitantesUnicos * 0.071), checkout);
+
+  return {
+    visitas: scale(kpis.visitas, factor),
+    cliquesWhatsApp: scale(kpis.cliquesWhatsApp, factor),
+    pedidosEnviados,
+    visitasDelta: kpis.visitasDelta,
+    cliquesDelta: kpis.cliquesDelta,
+    pedidosDelta: kpis.pedidosDelta,
+    visitantesUnicos,
+    contatosWhatsAppUnicos,
+    visitantesDelta: 11,
+    contatosWhatsAppDelta: 8,
+    conversaoPedido,
+    conversaoDeltaPp: 0.3,
+    atendimento: {
+      novos: 2,
+      emAtendimento: 1,
+      maisAntigoNovoEm: new Date(Date.now() - 84 * 60 * 1000).toISOString(),
+    },
+    serieDiaria,
+    modeloLiderId: modelosDesempenho[0]?.motoId ?? "x13-1000w",
+    motosMaisVistas: modelosDesempenho.map((moto) => ({
+      motoId: moto.motoId,
+      nome: moto.nome,
+      vistas: moto.interessados,
+      pedidos: moto.pedidos,
+      tendencia: moto.tendencia,
+    })),
+    modelosDesempenho,
+    funil: [
+      { etapa: "Visitantes", sessoes: visitantesUnicos, conversaoAnterior: 100, conversaoTotal: 100 },
+      {
+        etapa: "Interagiram com um modelo",
+        sessoes: interactions,
+        conversaoAnterior: 46,
+        conversaoTotal: 46,
+      },
+      {
+        etapa: "Abriram o pedido",
+        sessoes: checkout,
+        conversaoAnterior: Math.round((checkout / interactions) * 1000) / 10,
+        conversaoTotal: 10,
+      },
+      {
+        etapa: "Enviaram pelo checkout",
+        sessoes: checkoutWhatsapp,
+        conversaoAnterior: Math.round((checkoutWhatsapp / checkout) * 1000) / 10,
+        conversaoTotal: Math.round((checkoutWhatsapp / visitantesUnicos) * 1000) / 10,
+      },
+    ],
+    horarios: horarios.map((value) => scale(value, factor)),
+    origens: origens.map((item) => ({ ...item, visitas: scale(item.visitas, factor) })),
+    cidades: cidades.map((item) => ({ ...item, visitas: scale(item.visitas, factor) })),
+    calculadora: {
+      simulacoes: scale(calculadora.usos, factor),
+      gastoGasolinaMedio: calculadora.gastoGasolinaMedio,
+      kmPorDiaMedio: calculadora.kmPorDiaMedio,
+      economiaMediaEstimada: calculadora.economiaMediaEstimada,
+    },
+    periodo: {
+      label: month
+        ? new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" })
+            .format(new Date(Date.UTC(selectedYear, selectedMonth - 1, 15)))
+            .replace(/^./, (letter) => letter.toUpperCase())
+        : `Últimos ${range} dias`,
+      month,
+      range: month ? null : range,
+      mesesDisponiveis: ["2026-07", "2026-06", "2026-05"],
+    },
+  };
+}
 
 /** Pedidos de exemplo para o mini-CRM (aparecem só se não houver pedidos). */
 export const pedidosDemo = [

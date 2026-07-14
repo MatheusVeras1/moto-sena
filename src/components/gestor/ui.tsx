@@ -35,17 +35,25 @@ export function useCountUp(target: number, duration = 850) {
 }
 
 /** Selo de tendência: verde subindo, vermelho caindo. */
-export function TrendBadge({ delta, className }: { delta: number; className?: string }) {
+export function TrendBadge({
+  delta,
+  className,
+  suffix = "%",
+}: {
+  delta: number;
+  className?: string;
+  suffix?: string;
+}) {
   const positive = delta >= 0;
 
   return (
     <span
       className={cn(
         "inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-xs font-bold tabular-nums",
-        positive ? "bg-emerald-500/10 text-emerald-400" : "bg-[#ff6a1a]/15 text-[#f87171]",
+        positive ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/15 text-[#f87171]",
         className
       )}
-      title={`${positive ? "Subiu" : "Caiu"} ${Math.abs(delta)}% vs período anterior`}
+      title={`${positive ? "Subiu" : "Caiu"} ${Math.abs(delta)}${suffix} vs período anterior`}
     >
       {positive ? (
         <ArrowUpRight className="h-3.5 w-3.5" />
@@ -53,7 +61,7 @@ export function TrendBadge({ delta, className }: { delta: number; className?: st
         <ArrowDownRight className="h-3.5 w-3.5" />
       )}
       {positive ? "+" : ""}
-      {delta}%
+      {delta}{suffix}
     </span>
   );
 }
@@ -74,15 +82,15 @@ export function Card({
   return (
     <section
       className={cn(
-        "rounded-lg border border-white/10 bg-[#1b1b1b] p-5 transition-colors duration-300 hover:border-[#ff6a1a]/30",
+        "min-w-0 rounded-lg border border-white/10 bg-[#1b1b1b] p-5 transition-colors duration-300 hover:border-gestor-gold/30",
         className
       )}
     >
       {title ? (
         <div className="flex items-start gap-3">
           {Icon ? (
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-[#ff6a1a]/25 bg-[#ff6a1a]/10">
-              <Icon className="h-4 w-4 text-[#ff9556]" />
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-gestor-gold/25 bg-gestor-gold/10">
+              <Icon className="h-4 w-4 text-gestor-gold-soft" />
             </span>
           ) : null}
           <div>
@@ -103,6 +111,7 @@ export function StatTile({
   hint,
   icon: Icon,
   delta,
+  deltaSuffix,
 }: {
   label: string;
   /** Valor textual (usado quando não há `count`). */
@@ -112,21 +121,22 @@ export function StatTile({
   hint?: string;
   icon?: LucideIcon;
   delta?: number;
+  deltaSuffix?: string;
 }) {
   const animated = useCountUp(count ?? 0);
   const display = count != null ? animated.toLocaleString("pt-BR") : value ?? "";
 
   return (
-    <div className="rounded-lg border border-white/10 bg-[#1b1b1b] p-5 transition-colors duration-300 hover:border-[#ff6a1a]/30">
+    <div className="min-w-0 rounded-lg border border-white/10 bg-[#1b1b1b] p-5 transition-colors duration-300 hover:border-gestor-gold/30">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-400">{label}</p>
-        {Icon ? <Icon className="h-4 w-4 text-[#ff6a1a]" /> : null}
+        {Icon ? <Icon className="h-4 w-4 text-gestor-gold" /> : null}
       </div>
       <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight text-white">
         {display}
       </p>
       <div className="mt-1.5 flex items-center gap-2">
-        {delta != null ? <TrendBadge delta={delta} /> : null}
+        {delta != null ? <TrendBadge delta={delta} suffix={deltaSuffix} /> : null}
         {hint ? <p className="text-xs text-zinc-400">{hint}</p> : null}
       </div>
     </div>
@@ -170,7 +180,7 @@ export function BarRow({
           whileInView={{ width: `${pct}%` }}
           viewport={{ once: true }}
           transition={{ duration: 0.7, ease: "easeOut" }}
-          className="block h-full rounded-r bg-[#ff6a1a]"
+          className="block h-full rounded-r bg-gestor-gold"
         />
       </span>
       <span className="text-sm font-semibold tabular-nums text-white">{display}</span>

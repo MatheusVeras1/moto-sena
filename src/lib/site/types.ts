@@ -41,6 +41,23 @@ export type AdminOverview = {
   visitasDelta: number | null;
   cliquesDelta: number | null;
   pedidosDelta: number | null;
+  visitantesUnicos: number;
+  contatosWhatsAppUnicos: number;
+  visitantesDelta: number | null;
+  contatosWhatsAppDelta: number | null;
+  conversaoPedido: number;
+  conversaoDeltaPp: number | null;
+  atendimento: {
+    novos: number;
+    emAtendimento: number;
+    maisAntigoNovoEm: string | null;
+  };
+  serieDiaria: Array<{
+    data: string;
+    visitantes: number;
+    contatosWhatsApp: number;
+    pedidos: number;
+  }>;
   modeloLiderId: string;
   motosMaisVistas: Array<{
     motoId: string;
@@ -49,7 +66,21 @@ export type AdminOverview = {
     pedidos: number;
     tendencia: number | null;
   }>;
-  funil: Array<{ etapa: string; valor: number }>;
+  modelosDesempenho: Array<{
+    motoId: string;
+    nome: string;
+    interessados: number;
+    pedidos: number;
+    conversao: number;
+    tendencia: number | null;
+  }>;
+  funil: Array<{
+    etapa: string;
+    sessoes?: number;
+    valor?: number;
+    conversaoAnterior?: number;
+    conversaoTotal?: number;
+  }>;
   /** Visitas por hora do dia (0-23), no fuso de Brasília. */
   horarios: number[];
   origens: Array<{ origem: string; visitas: number }>;
@@ -63,6 +94,7 @@ export type AdminOverview = {
   periodo: {
     label: string;
     month: string | null;
+    range: 7 | 30 | 90 | null;
     mesesDisponiveis: string[];
   };
 };

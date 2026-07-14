@@ -46,7 +46,7 @@ export default function EconomyCalculator() {
     <section id="economia" className="mx-auto max-w-7xl scroll-mt-24 px-4 py-16 sm:px-6 lg:px-8">
       <motion.div {...fadeUp} className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr]">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#ff6a1a]">
+          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-eco-emerald">
             Simulador de economia
           </p>
           <h2 className="mt-3 text-balance text-3xl font-semibold text-white sm:text-5xl">
@@ -58,7 +58,8 @@ export default function EconomyCalculator() {
             estimativa e varia conforme uso, bateria e tarifa de energia.
           </p>
         </div>
-        <div className="rounded-lg border border-white/10 bg-[#1b1b1b] p-5 shadow-xl shadow-black/20">
+        <div className="rounded-lg border border-white/10 bg-[#1b1b1b] p-5 shadow-xl shadow-black/20 relative overflow-hidden">
+          <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-eco-emerald to-tech-cyan" />
           <div className="grid gap-4 sm:grid-cols-3">
             <NumberInput label="Km por dia" value={dailyKm} onChange={setDailyKm} />
             <NumberInput label="Dias por mês" value={days} onChange={setDays} />
@@ -109,7 +110,7 @@ function NumberInput({
         inputMode="numeric"
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
-        className="mt-2 h-12 w-full rounded-md border border-white/10 bg-black/35 px-3 text-base text-white outline-none transition focus:border-[#ff6a1a] sm:text-sm"
+        className="mt-2 h-12 w-full rounded-md border border-white/10 bg-black/35 px-3 text-base text-white outline-none transition focus:border-eco-emerald sm:text-sm"
       />
     </label>
   );

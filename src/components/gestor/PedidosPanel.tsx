@@ -15,14 +15,14 @@ const STATUS_OPTIONS: { value: PedidoStatus; label: string }[] = [
 ];
 
 const STATUS_STYLE: Record<PedidoStatus, string> = {
-  novo: "border-[#ff6a1a]/50 text-[#ff9556]",
+  novo: "border-gestor-gold/50 text-gestor-gold-soft",
   atendimento: "border-sky-500/50 text-sky-300",
   vendido: "border-emerald-500/50 text-emerald-300",
   perdido: "border-zinc-400/50 text-zinc-400",
 };
 
 const STATUS_EDGE: Record<PedidoStatus, string> = {
-  novo: "border-l-[#ff6a1a]",
+  novo: "border-l-gestor-gold",
   atendimento: "border-l-sky-400",
   vendido: "border-l-emerald-400",
   perdido: "border-l-zinc-400",
@@ -70,7 +70,7 @@ export default function PedidosPanel() {
   if (loading) {
     return (
       <div className="flex min-h-48 items-center justify-center rounded-lg border border-white/10 bg-[#1b1b1b] text-zinc-400">
-        <Loader2 className="mr-2 h-5 w-5 animate-spin text-[#ff6a1a]" />
+        <Loader2 className="mr-2 h-5 w-5 animate-spin text-gestor-gold" />
         Carregando pedidos...
       </div>
     );
@@ -86,7 +86,7 @@ export default function PedidosPanel() {
       </div>
 
       {error ? (
-        <p className="rounded-md border border-[#ff6a1a]/30 bg-[#ff6a1a]/10 px-3 py-2 text-sm text-[#f87171]">
+        <p className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-[#f87171]">
           {error}
         </p>
       ) : null}
@@ -140,7 +140,7 @@ export default function PedidosPanel() {
                   disabled={saving === pedido.id}
                   onChange={(event) => updateStatus(pedido.id, event.target.value as PedidoStatus)}
                   className={cn(
-                    "h-10 rounded-md border bg-black/40 px-3 text-base font-semibold outline-none sm:text-sm transition focus:border-[#ff6a1a] disabled:opacity-60",
+                    "h-10 rounded-md border bg-black/40 px-3 text-base font-semibold outline-none sm:text-sm transition focus:border-gestor-gold disabled:opacity-60",
                     STATUS_STYLE[pedido.status]
                   )}
                 >

@@ -9,6 +9,19 @@
   --soft-gold: #ff9556;
   --panel: #1b1b1b;
   --panel-soft: #242424;
+
+  /* Novas variáveis de variação cromática */
+  --brand-orange: #ff6a1a;
+  --brand-orange-dark: #e85d04;
+  --brand-orange-light: #ff9556;
+  --gestor-gold: #d6a84a;
+  --gestor-gold-soft: #f0c86a;
+  --tech-cyan: #00d8ff;
+  --tech-cyan-dark: #008fa8;
+  --tech-cyan-light: #66e7ff;
+  --eco-emerald: #10b981;
+  --eco-emerald-dark: #059669;
+  --eco-emerald-light: #34d399;
 }
 
 @theme inline {
@@ -16,6 +29,18 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  --color-brand-orange: var(--brand-orange);
+  --color-brand-orange-dark: var(--brand-orange-dark);
+  --color-brand-orange-light: var(--brand-orange-light);
+  --color-gestor-gold: var(--gestor-gold);
+  --color-gestor-gold-soft: var(--gestor-gold-soft);
+  --color-tech-cyan: var(--tech-cyan);
+  --color-tech-cyan-dark: var(--tech-cyan-dark);
+  --color-tech-cyan-light: var(--tech-cyan-light);
+  --color-eco-emerald: var(--eco-emerald);
+  --color-eco-emerald-dark: var(--eco-emerald-dark);
+  --color-eco-emerald-light: var(--eco-emerald-light);
 }
 
 * {

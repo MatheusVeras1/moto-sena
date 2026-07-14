@@ -8,6 +8,11 @@ import {
   createSupabaseServerClient,
 } from "@/lib/supabase/server";
 import type { AdminOverview, CatalogMoto, OrderDto, SiteState } from "./types";
+import {
+  aggregateOverviewAnalytics,
+  type OverviewEvent,
+  type OverviewOrder,
+} from "./overview-analytics";
 
 type MotoRow = {
   id: string;
@@ -322,19 +327,8 @@ export async function trackEvent(input: {
 }
 
 // Mesmos valores de referÃªncia da calculadora do site (EconomyCalculator).
-const CALC_KWH_POR_KM = 0.035;
-const CALC_TARIFA_ENERGIA_KWH = 1.05;
-
 // Fuso de BrasÃ­lia (sem horÃ¡rio de verÃ£o desde 2019).
 const BRT_OFFSET_HOURS = 3;
-
-type EventRow = {
-  event_type: string;
-  moto_id: string | null;
-  session_id: string | null;
-  metadata: Record<string, unknown> | null;
-  created_at: string;
-};
 
 /** InÃ­cio de um mÃªs "YYYY-MM" em UTC, considerando meia-noite de BrasÃ­lia. */
 function monthStartUtc(year: number, monthIndex: number) {
@@ -379,28 +373,12 @@ function listAvailableMonths(firstEventIso: string | null) {
   return months;
 }
 
-function percentDelta(current: number, previous: number): number | null {
-  if (previous <= 0) return null;
-  return Math.round(((current - previous) / previous) * 100);
-}
-
-function classifyOrigin(metadata: Record<string, unknown> | null): string | null {
-  if (!metadata || !("referrer" in metadata)) return null; // evento antigo, sem coleta
-  const referrer = String(metadata.referrer ?? "").toLowerCase();
-  const utm = String(metadata.utmSource ?? "").toLowerCase();
-  const source = `${utm} ${referrer}`;
-
-  if (source.includes("instagram") || utm === "ig") return "Instagram";
-  if (source.includes("whatsapp") || source.includes("wa.me")) return "WhatsApp";
-  if (source.includes("facebook") || source.includes("fb.me")) return "Facebook";
-  if (source.includes("google")) return "Google";
-  if (!referrer && !utm) return "Direto (link salvo)";
-  return "Outros";
-}
-
-export async function getOverview(options: { month?: string | null } = {}): Promise<AdminOverview> {
+export async function getOverview(
+  options: { month?: string | null; range?: 7 | 30 | 90 } = {}
+): Promise<AdminOverview> {
   const supabase = createSupabaseAdminClient();
   const month = options.month ?? null;
+  const range = options.range ?? 30;
   const fallback: AdminOverview = {
     visitas: 0,
     cliquesWhatsApp: 0,
@@ -408,12 +386,28 @@ export async function getOverview(options: { month?: string | null } = {}): Prom
     visitasDelta: null,
     cliquesDelta: null,
     pedidosDelta: null,
+    visitantesUnicos: 0,
+    contatosWhatsAppUnicos: 0,
+    visitantesDelta: null,
+    contatosWhatsAppDelta: null,
+    conversaoPedido: 0,
+    conversaoDeltaPp: null,
+    atendimento: { novos: 0, emAtendimento: 0, maisAntigoNovoEm: null },
+    serieDiaria: [],
     modeloLiderId: "x13-1000w",
     motosMaisVistas: fallbackMotos.map((moto) => ({
       motoId: moto.id,
       nome: moto.name,
       vistas: 0,
       pedidos: 0,
+      tendencia: null,
+    })),
+    modelosDesempenho: fallbackMotos.map((moto) => ({
+      motoId: moto.id,
+      nome: moto.name,
+      interessados: 0,
+      pedidos: 0,
+      conversao: 0,
       tendencia: null,
     })),
     funil: [
@@ -428,8 +422,9 @@ export async function getOverview(options: { month?: string | null } = {}): Prom
     cidades: [],
     calculadora: null,
     periodo: {
-      label: month ? formatMonthLabel(month) : "Ãšltimos 30 dias",
+      label: month ? formatMonthLabel(month) : `Últimos ${range} dias`,
       month,
+      range: month ? null : range,
       mesesDisponiveis: [],
     },
   };
@@ -448,36 +443,36 @@ export async function getOverview(options: { month?: string | null } = {}): Prom
     prevEnd = start;
   } else {
     const now = Date.now();
-    start = new Date(now - 30 * 24 * 60 * 60 * 1000);
+    start = new Date(now - range * 24 * 60 * 60 * 1000);
     end = null;
-    prevStart = new Date(now - 60 * 24 * 60 * 60 * 1000);
+    prevStart = new Date(now - range * 2 * 24 * 60 * 60 * 1000);
     prevEnd = start;
   }
 
   let eventsQuery = supabase
     .from("analytics_events")
-    .select("event_type,moto_id,session_id,metadata,created_at")
+    .select("id,event_type,moto_id,session_id,metadata,created_at")
     .gte("created_at", start.toISOString());
   if (end) eventsQuery = eventsQuery.lt("created_at", end.toISOString());
 
   let ordersQuery = supabase
     .from("orders")
-    .select("moto_id,status")
+    .select("moto_id,status,created_at")
     .gte("created_at", start.toISOString());
   if (end) ordersQuery = ordersQuery.lt("created_at", end.toISOString());
 
-  const [eventsResult, ordersResult, prevEventsResult, prevOrdersResult, firstEventResult] =
+  const [eventsResult, ordersResult, prevEventsResult, prevOrdersResult, firstEventResult, attentionResult] =
     await Promise.all([
       eventsQuery,
       ordersQuery,
       supabase
         .from("analytics_events")
-        .select("event_type,moto_id")
+        .select("id,event_type,moto_id,session_id,metadata,created_at")
         .gte("created_at", prevStart.toISOString())
         .lt("created_at", prevEnd.toISOString()),
       supabase
         .from("orders")
-        .select("moto_id")
+        .select("moto_id,status,created_at")
         .gte("created_at", prevStart.toISOString())
         .lt("created_at", prevEnd.toISOString()),
       supabase
@@ -486,132 +481,47 @@ export async function getOverview(options: { month?: string | null } = {}): Prom
         .order("created_at", { ascending: true })
         .limit(1)
         .maybeSingle(),
+      supabase
+        .from("orders")
+        .select("status,created_at")
+        .in("status", ["novo", "atendimento"])
+        .order("created_at", { ascending: true }),
     ]);
 
   if (eventsResult.error || ordersResult.error) return fallback;
 
-  const events = (eventsResult.data ?? []) as EventRow[];
-  const orders = (ordersResult.data ?? []) as Array<{ moto_id: string | null; status: string }>;
-  const prevEvents = (prevEventsResult.data ?? []) as Array<{
-    event_type: string;
-    moto_id: string | null;
-  }>;
-  const prevOrders = (prevOrdersResult.data ?? []) as Array<{ moto_id: string | null }>;
-
-  const countType = (list: Array<{ event_type: string }>, type: string) =>
-    list.filter((event) => event.event_type === type).length;
+  const events = (eventsResult.data ?? []) as OverviewEvent[];
+  const orders = (ordersResult.data ?? []) as OverviewOrder[];
+  const prevEvents = (prevEventsResult.data ?? []) as OverviewEvent[];
+  const prevOrders = (prevOrdersResult.data ?? []) as OverviewOrder[];
 
   // Vistas e pedidos por moto (perÃ­odo atual e anterior, para tendÃªncia).
-  const VISTA_EVENTS = ["moto_click", "detail_open", "checkout_open"];
-  const byMoto = new Map<string, { vistas: number; pedidos: number; vistasAntes: number }>();
-  for (const moto of fallbackMotos) byMoto.set(moto.id, { vistas: 0, pedidos: 0, vistasAntes: 0 });
-  for (const event of events) {
-    if (!event.moto_id) continue;
-    const entry = byMoto.get(event.moto_id);
-    if (entry && VISTA_EVENTS.includes(event.event_type)) entry.vistas += 1;
-  }
-  for (const event of prevEvents) {
-    if (!event.moto_id) continue;
-    const entry = byMoto.get(event.moto_id);
-    if (entry && VISTA_EVENTS.includes(event.event_type)) entry.vistasAntes += 1;
-  }
-  for (const order of orders) {
-    if (!order.moto_id) continue;
-    const entry = byMoto.get(order.moto_id);
-    if (entry) entry.pedidos += 1;
-  }
-
-  const motosMaisVistas = fallbackMotos
-    .map((moto) => {
-      const entry = byMoto.get(moto.id) ?? { vistas: 0, pedidos: 0, vistasAntes: 0 };
-      return {
-        motoId: moto.id,
-        nome: moto.name,
-        vistas: entry.vistas,
-        pedidos: entry.pedidos,
-        tendencia: percentDelta(entry.vistas, entry.vistasAntes),
-      };
-    })
-    .sort((a, b) => b.vistas - a.vistas);
-
   // Visitas por hora do dia, no fuso de BrasÃ­lia.
-  const horarios = Array.from({ length: 24 }, () => 0);
-  for (const event of events) {
-    if (event.event_type !== "page_view") continue;
-    const hour = (new Date(event.created_at).getUTCHours() + 24 - BRT_OFFSET_HOURS) % 24;
-    horarios[hour] += 1;
-  }
-
   // Origem das visitas (sÃ³ page_view que jÃ¡ veio com coleta de referrer).
-  const origemCount = new Map<string, number>();
-  for (const event of events) {
-    if (event.event_type !== "page_view") continue;
-    const origem = classifyOrigin(event.metadata);
-    if (!origem) continue;
-    origemCount.set(origem, (origemCount.get(origem) ?? 0) + 1);
-  }
-  const origens = [...origemCount.entries()]
-    .map(([origem, visitas]) => ({ origem, visitas }))
-    .sort((a, b) => b.visitas - a.visitas);
-
   // Cidades detectadas pelo IP (borda da Vercel).
-  const cidadeCount = new Map<string, number>();
-  for (const event of events) {
-    if (event.event_type !== "page_view") continue;
-    const city = event.metadata?.geoCity;
-    if (typeof city !== "string" || !city) continue;
-    cidadeCount.set(city, (cidadeCount.get(city) ?? 0) + 1);
-  }
-  const cidades = [...cidadeCount.entries()]
-    .map(([cidade, visitas]) => ({ cidade, visitas }))
-    .sort((a, b) => b.visitas - a.visitas)
-    .slice(0, 6);
-
   // Calculadora: Ãºltima simulaÃ§Ã£o de cada sessÃ£o (valores em que a pessoa parou).
-  const calcBySession = new Map<string, { dailyKm: number; days: number; gasCost: number }>();
-  for (const event of events) {
-    if (event.event_type !== "economy_calculator") continue;
-    const meta = event.metadata ?? {};
-    const dailyKm = Number(meta.dailyKm);
-    const days = Number(meta.days);
-    const gasCost = Number(meta.gasCost);
-    if (!Number.isFinite(dailyKm) || !Number.isFinite(days) || !Number.isFinite(gasCost)) continue;
-    calcBySession.set(event.session_id ?? event.created_at, { dailyKm, days, gasCost });
-  }
-  const simulacoes = [...calcBySession.values()];
-  const media = (values: number[]) =>
-    values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
-  const calculadora = simulacoes.length
-    ? {
-        simulacoes: simulacoes.length,
-        gastoGasolinaMedio: Math.round(media(simulacoes.map((s) => s.gasCost))),
-        kmPorDiaMedio: Math.round(media(simulacoes.map((s) => s.dailyKm))),
-        economiaMediaEstimada: Math.round(
-          media(
-            simulacoes.map((s) =>
-              Math.max(
-                0,
-                s.gasCost - s.dailyKm * s.days * CALC_KWH_POR_KM * CALC_TARIFA_ENERGIA_KWH
-              )
-            )
-          )
-        ),
-      }
-    : null;
-
-  const visitas = countType(events, "page_view");
-  const cliquesWhatsApp = countType(events, "whatsapp_click");
+  const analytics = aggregateOverviewAnalytics({
+    events,
+    previousEvents: prevEvents,
+    orders,
+    previousOrders: prevOrders,
+    motos: fallbackMotos,
+    start,
+    end: end ?? new Date(),
+  });
+  const visitas = analytics.visitas;
+  const cliquesWhatsApp = analytics.cliquesWhatsApp;
+  const countType = (list: OverviewEvent[], type: string) =>
+    list.filter((event) => event.event_type === type).length;
+  const { horarios, origens, cidades, calculadora } = analytics;
+  const attention = (attentionResult.data ?? []) as Array<{
+    status: string;
+    created_at: string;
+  }>;
+  const novos = attention.filter((order) => order.status === "novo");
 
   return {
-    visitas,
-    cliquesWhatsApp,
-    pedidosEnviados: orders.length,
-    visitasDelta: percentDelta(visitas, countType(prevEvents, "page_view")),
-    cliquesDelta: percentDelta(cliquesWhatsApp, countType(prevEvents, "whatsapp_click")),
-    pedidosDelta: percentDelta(orders.length, prevOrders.length),
-    modeloLiderId: motosMaisVistas[0]?.motoId ?? "x13-1000w",
-    motosMaisVistas,
-    funil: [
+    ...{ funil: [
       { etapa: "Visitaram o site", valor: visitas },
       { etapa: "Abriram um modelo", valor: countType(events, "detail_open") },
       { etapa: "Giraram a moto em 360Â°", valor: countType(events, "viewer_360") },
@@ -621,10 +531,17 @@ export async function getOverview(options: { month?: string | null } = {}): Prom
     horarios,
     origens,
     cidades,
-    calculadora,
+    calculadora },
+    ...analytics,
+    atendimento: {
+      novos: novos.length,
+      emAtendimento: attention.filter((order) => order.status === "atendimento").length,
+      maisAntigoNovoEm: novos[0]?.created_at ?? null,
+    },
     periodo: {
-      label: month ? formatMonthLabel(month) : "Ãšltimos 30 dias",
+      label: month ? formatMonthLabel(month) : `Últimos ${range} dias`,
       month,
+      range: month ? null : range,
       mesesDisponiveis: listAvailableMonths(firstEventResult.data?.created_at ?? null),
     },
   };

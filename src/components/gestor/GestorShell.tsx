@@ -55,7 +55,7 @@ export default function GestorShell({
               alt={loja.nome}
               width={44}
               height={44}
-              className="h-11 w-11 rounded-md border border-[#ff6a1a]/40 object-cover"
+              className="h-11 w-11 rounded-md border border-gestor-gold/40 object-cover"
             />
             <div>
               <p className="font-semibold text-white">Painel do gestor</p>
@@ -97,7 +97,7 @@ export default function GestorShell({
                 className={cn(
                   "whitespace-nowrap border-b-2 px-4 py-3 text-sm font-semibold transition",
                   active
-                    ? "border-[#ff6a1a] text-white"
+                    ? "border-gestor-gold text-white"
                     : "border-transparent text-zinc-400 hover:text-zinc-300"
                 )}
               >

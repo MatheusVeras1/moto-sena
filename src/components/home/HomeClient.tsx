@@ -56,26 +56,30 @@ const navItems = [
   },
 ];
 
-const PRESENTATION_LOGO_KEY = "moto-sena-presentation-logo";
-const PRESENTATION_LOGO_EVENT = "moto-sena-presentation-logo-change";
+const LOGO_INDEX_KEY = "moto-sena-logo-index";
+const LOGO_INDEX_EVENT = "moto-sena-logo-index-change";
 
-function subscribeToPresentationLogo(callback: () => void) {
-  window.addEventListener(PRESENTATION_LOGO_EVENT, callback);
-  return () => window.removeEventListener(PRESENTATION_LOGO_EVENT, callback);
+function subscribeToLogoIndex(callback: () => void) {
+  window.addEventListener(LOGO_INDEX_EVENT, callback);
+  return () => window.removeEventListener(LOGO_INDEX_EVENT, callback);
 }
 
-function presentationLogoSnapshot() {
-  return sessionStorage.getItem(PRESENTATION_LOGO_KEY) === "true";
+function logoIndexSnapshot() {
+  const stored = sessionStorage.getItem(LOGO_INDEX_KEY);
+  if (!stored) return 0;
+  const idx = Number.parseInt(stored, 10);
+  return Number.isNaN(idx) || idx < 0 || idx > 2 ? 0 : idx;
 }
 
 export default function HomeClient({ initialState }: { initialState: SiteState }) {
   const [siteState, setSiteState] = useState(initialState);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [checkoutId, setCheckoutId] = useState<string | null>(null);
-  const showingPresentationLogo = useSyncExternalStore(
-    subscribeToPresentationLogo,
-    presentationLogoSnapshot,
-    () => false
+  
+  const logoIndex = useSyncExternalStore(
+    subscribeToLogoIndex,
+    logoIndexSnapshot,
+    () => 0
   );
 
   useEffect(() => {
@@ -117,12 +121,17 @@ export default function HomeClient({ initialState }: { initialState: SiteState }
     setCheckoutId(moto ? moto.id : null);
   }
 
-  function togglePresentationLogo() {
-    sessionStorage.setItem(PRESENTATION_LOGO_KEY, String(!showingPresentationLogo));
-    window.dispatchEvent(new Event(PRESENTATION_LOGO_EVENT));
+  function rotateLogo() {
+    const nextIndex = (logoIndex + 1) % 3;
+    sessionStorage.setItem(LOGO_INDEX_KEY, String(nextIndex));
+    window.dispatchEvent(new Event(LOGO_INDEX_EVENT));
   }
 
-  const activeLogoPath = showingPresentationLogo ? loja.presentationLogoPath : loja.logoPath;
+  const activeLogoPath = [
+    loja.logoPath,
+    loja.presentationLogoPath,
+    "/brand/logo-moto-sena.jpg",
+  ][logoIndex];
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#111111] text-[#f5f2ea]">
@@ -131,8 +140,8 @@ export default function HomeClient({ initialState }: { initialState: SiteState }
         items={navItems}
         ctaHref={whatsappInterestHref}
         ctaLabel="WhatsApp"
-        showingPresentationLogo={showingPresentationLogo}
-        onTogglePresentationLogo={togglePresentationLogo}
+        logoIndex={logoIndex}
+        onRotateLogo={rotateLogo}
       />
       <Hero
         logoPath={activeLogoPath}

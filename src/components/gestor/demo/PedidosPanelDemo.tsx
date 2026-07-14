@@ -13,14 +13,14 @@ const STATUS_OPTIONS: { value: PedidoStatus; label: string }[] = [
 ];
 
 const STATUS_STYLE: Record<PedidoStatus, string> = {
-  novo: "border-[#ff6a1a]/50 text-[#ff9556]",
+  novo: "border-gestor-gold/50 text-gestor-gold-soft",
   atendimento: "border-sky-500/50 text-sky-300",
   vendido: "border-emerald-500/50 text-emerald-300",
   perdido: "border-zinc-400/50 text-zinc-400",
 };
 
 const STATUS_EDGE: Record<PedidoStatus, string> = {
-  novo: "border-l-[#ff6a1a]",
+  novo: "border-l-gestor-gold",
   atendimento: "border-l-sky-400",
   vendido: "border-l-emerald-400",
   perdido: "border-l-zinc-400",
@@ -92,7 +92,7 @@ export default function PedidosPanelDemo() {
                     updatePedidoStatus(pedido.id, event.target.value as PedidoStatus)
                   }
                   className={cn(
-                    "h-10 rounded-md border bg-black/40 px-3 text-base font-semibold outline-none sm:text-sm transition focus:border-[#ff6a1a]",
+                    "h-10 rounded-md border bg-black/40 px-3 text-base font-semibold outline-none sm:text-sm transition focus:border-gestor-gold",
                     STATUS_STYLE[pedido.status]
                   )}
                 >
